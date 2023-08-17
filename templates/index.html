@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hot Search Fetcher</title>
-    <link rel="stylesheet" href="./static/bootstrap.min.css">
-    <script src="./static/jquery.min.js"></script>
-    <script src="./static/popper.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}">
+    <script src="{{ url_for('static', filename='jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='poper.min.js') }}"></script>
     <style>
         .container {
             display: flex;
@@ -143,7 +143,7 @@
         </div>
     </div>
 </div>
-    <script src="./static/bootstrap.min.js"></script>
+    <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
 
 
     <script type="text/javascript">

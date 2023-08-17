@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hot Search Fetcher</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <style>
+        .container {
+            display: flex;
+        }
+
+        .left-panel{
+            width: 30%;
+            padding: 20px;
+        }
+
+        .left-panel ul {
+            padding-inline-start: 0px;
+        }
+
+        .right-panel {
+            padding: 20px;
+            width: 70%;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            width: 30%;
+        }
+
+        #resultsArea {
+            width: 100%; /* 使其填充父容器的宽度 */
+            height: 300px; /* 设置一个固定的高度 */
+            padding: 10px;
+            border-radius: 5px; /* 圆角 */
+            font-family: Arial, sans-serif; /* 设置字体 */
+            font-size: 14px;
+            resize: vertical; /* 只允许垂直调整大小 */
+        }
+
+        #resultsArea::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #resultsArea::-webkit-scrollbar-thumb {
+            background-color: #888;
+            border-radius: 4px;
+        }
+
+        #resultsArea::-webkit-scrollbar-thumb:hover {
+            background-color: #555;
+        }
+
+        #resultsArea {
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+        }
+
+
+    </style>
+</head>
+<body>
+
+<!-- Cookie Input Modal -->
+<div id="cookieModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Enter Your Cookie</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <input type="text" class="form-control" id="cookieInput" placeholder="Paste your cookie here...">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-primary" onclick="saveCookie()">Save</button>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="container">
+    <!-- Left Panel - Hot Search List -->
+    <div class="left-panel">
+        <h2>Hot Search List</h2>
+        <ul id="hot-search-list">
+            <!-- This will be populated by JavaScript -->
+        </ul>
+    </div>
+
+    <!-- Right Panel - Input & Results Display -->
+    <div class="right-panel">
+        <h2>Search Details</h2>
+
+        <div class="row">
+            <div class="col-12">
+                <label for="cookieDisplay">Cookie:</label>
+                <input type="text" id="cookieDisplay" class="form-control" readonly>
+                <button onclick="editCookie()" class="btn btn-primary mt-3">Edit</button>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-12">
+                <input type="text" id="searchInput" class="form-control" placeholder="Enter search text...">
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-6">
+                <button onclick="fetchSearchDetails()" class="btn btn-primary">Fetch</button>
+            </div>
+            <div class="col-3">
+                <button onclick="copyToClipboard()" class="btn btn-primary">Copy to Clipboard</button>
+            </div>
+            <div class="col-3">
+                <div id="charCount">0 characters</div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <!-- Results will be displayed here -->
+            <textarea id="resultsArea"></textarea>
+        </div>
+    </div>
+</div>
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+
+    <script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", function() {
+        let cookie = localStorage.getItem('userCookie');
+        if (cookie) {
+            document.getElementById("cookieDisplay").value = cookie;
+            // Ideally, you'd fetch the hot search list here after verifying the cookie
+        } else {
+            let modal = document.getElementById("cookieModal");
+            $("#cookieModal").modal('show');
+        }
+    });
+
+    function saveCookie() {
+        let cookie = document.getElementById("cookieInput").value;
+        if (cookie) {
+            localStorage.setItem('userCookie', cookie);
+            document.getElementById("cookieDisplay").value = cookie;
+            let modal = document.getElementById("cookieModal");
+            $("#cookieModal").modal('hide');
+            // After saving the cookie, fetch the hot search list
+        } else {
+            alert("Please provide a valid cookie!");
+        }
+    }
+
+    function editCookie() {
+        document.getElementById("cookieDisplay").readOnly = false;
+    }
+
+    function fetchSearchDetails() {
+        const btn = $('[onclick="fetchSearchDetails()"]');
+        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...');
+
+        const searchVal = $('#searchInput').val();
+        const cookieVal = $('#cookieDisplay').val();
+
+        $.ajax({
+            url: "/fetch_data",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+                search_input: searchVal,
+                cookie: cookieVal
+            }),
+            dataType: "text",
+            success: function(data) {
+                $('#resultsArea').val(data);
+                updateCharCount(); // 更新字符计数
+                btn.prop('disabled', false).text('Fetch');
+            },
+            error: function(jqXHR) {
+                const errorMsg = jqXHR.responseJSON && jqXHR.responseJSON.error ? jqXHR.responseJSON.error : 'There was an error fetching the data.';
+                alert(errorMsg);
+                btn.prop('disabled', false).text('Fetch');
+            }
+        });
+    }
+
+
+
+    function copyToClipboard() {
+        const textarea = document.getElementById('resultArea');
+        textarea.select();
+        document.execCommand('copy');
+    }
+
+    function updateCharCount() {
+        const textAreaContent = $('#resultsArea').val();
+        const charCount = textAreaContent.length;
+        $('#charCount').text(`${charCount} characters`);
+    }
+
+
+    $(document).ready(function() {
+        $('#resultsArea').on('input', updateCharCount);
+        updateCharCount(); // 初始化字符数
+
+
+        let cookie = localStorage.getItem('userCookie');
+
+        if (!cookie) {
+            $("#cookieModal").modal('show');
+        } else {
+            document.getElementById("cookieDisplay").value = cookie;
+
+            // Fetch the hot search list only if there's a cookie
+            $.ajax({
+                url: "/get_hot_search_list",
+                type: "POST",  // Use POST method
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",  // Set content type to JSON
+                data: JSON.stringify({   // Convert the data to a JSON string
+                    userCookie: cookie
+                }),
+                success: function(data) {
+                    data.forEach(function(item, index) {
+                        $('#hot-search-list').append('<li class="list-group-item hot-search-item" data-text="' + item + '"><span class="badge badge-primary">' + (index + 1) + '</span> ' + item + '</li>');
+                    });
+                },
+                error: function(xhr, status, error) {
+                    alert("Error fetching hot search list. Please ensure you provided a valid cookie.");
+                }
+            });
+        }
+    });
+
+    $(document).on('click', '.hot-search-item', function() {
+        const hotSearchText = $(this).attr('data-text');
+        $('#searchInput').val(hotSearchText);
+    });
+
+
+// ... rest of the code
+
+    </script>
+</body>
+</html>
